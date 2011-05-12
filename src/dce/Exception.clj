@@ -17,3 +17,6 @@
      [[message] (vary-meta data assoc :type type)])
   ([type data]
      [[] (vary-meta data assoc :type type)]))
+
+(defn -toString [e]
+  (print-str (.getMessage e) (.payload e)))
