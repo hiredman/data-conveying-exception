@@ -69,3 +69,6 @@
 
 (defn -count [self]
   (count (.state self)))
+
+(defn toss [& {:as args}]
+  (throw (dce.Exception. args)))
