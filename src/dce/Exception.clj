@@ -1,22 +1,20 @@
 (ns dce.Exception
   (:gen-class :extends RuntimeException
-              :state payload
+              :implements [clojure.lang.ILookup]
+              :state data
               :init init
-              :constructors {[String Throwable clojure.lang.Keyword
-                              java.util.Map]
-                             [String Throwable]
-                             [String clojure.lang.Keyword java.util.Map]
-                             [String]
-                             [clojure.lang.Keyword java.util.Map]
-                             []}))
+              :constructors {[java.util.Map]
+                             [String Throwable]}))
 
 (defn -init
-  ([message cause type data]
-     [[message cause] (vary-meta data assoc :type type)])
-  ([message type data]
-     [[message] (vary-meta data assoc :type type)])
-  ([type data]
-     [[] (vary-meta data assoc :type type)]))
+  ([{:keys [message cause] :as data}]
+     [[message cause] data]))
+
+(defn -valAt
+  ([self key]
+     (.valAt (.data self) key))
+  ([self key not-found]
+     (.valAt (.data self) key not-found)))
 
 (defn -toString [e]
-  (print-str (.getMessage e) (.payload e)))
+  (.toString (.data e)))
