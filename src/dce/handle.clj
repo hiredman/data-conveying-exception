@@ -12,7 +12,7 @@
 (defmacro handler-case
   "Executes body in a context where raised exceptions can be handled.
 
-  dispatch-fn accepts a raised data-carrying Exception and returns a selector
+  dispatch-fn accepts a raised data-conveying Exception and returns a selector
   used to choose a handler. Commonly, dispatch-fn will be :type to dispatch
   on the condition's :type value.
 
@@ -21,7 +21,7 @@
     (handle key
       ...)
 
-  If a data-carrying Exception is raised, executes the body of the
+  If a data-conveying Exception is raised, executes the body of the
   first handler whose key satisfies (isa? selector key). If no
   handlers match, re-raises the condition.
 
