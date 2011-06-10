@@ -1,13 +1,13 @@
 (ns dce.handle)
 
+(def ^{:doc "While a handler is running, bound to the selector returned by the
+  handler-case dispatch-fn for the exception."} *selector*)
+
 (defn- separate [f s] ; lifted from c.c.seq
   [(filter f s) (filter (complement f) s)])
 
 (defn starts-with-fn [x]
   (fn [c] (and (coll? c) (= x (first c)))))
-
-(def ^{:doc "While a handler is running, bound to the selector returned by the
-  handler-case dispatch-fn for *condition*"} *selector*)
 
 (defmacro handler-case
   "Executes body in a context where raised exceptions can be handled.
@@ -18,7 +18,7 @@
 
   Handlers are forms within body:
 
-    (handle key
+    (handle key ex
       ...)
 
   If a data-conveying Exception is raised, executes the body of the
@@ -30,15 +30,39 @@
   that matched the handler's key."
   [dispatch-fn & body]
   (let [[handlers code] (separate (starts-with-fn 'handle) body)
-        [catches code] (separate (starts-with-fn 'catch) code)]
+        [catches code] (separate (starts-with-fn 'catch) code)
+        exception (gensym)]
     `(try
        ~@code
-       (catch dce.Exception e#
-         (binding [*selector* (~dispatch-fn e#)]
+       (catch dce.Exception ~exception
+         (binding [*selector* (~dispatch-fn ~exception)]
            (cond
             ~@(mapcat
-               (fn [[_ key & body]]
-                 `[(isa? *selector* ~key) (do ~@body)])
+               (fn [[_ key local & body]]
+                 `[(isa? *selector* ~key) (let [~local ~exception] ~@body)])
                handlers)
-            :else (raise))))
+            :else (throw ~exception))))
        ~@catches)))
+
+(defn- body-form? [x]
+  (or (not (seq? x)) (not= 'catch (first x))))
+
+(defn- raw? [[_ x]]
+  (and (symbol? x) (class? (resolve x))))
+
+(defmacro try+
+  [& body]
+  (let [[tried catches] (partition-by body-form? body)
+        [raw-catches dce-catches] (separate raw? catches)
+        exception (gensym)]
+    `(try
+       (try
+         ~@tried
+         (catch dce.Exception ~exception
+           (cond
+            ~@(mapcat
+               (fn [[_ pred local & body]]
+                 `[(~pred ~exception) (let [~local ~exception] ~@body)])
+               dce-catches)
+            :else (throw ~exception))))
+       ~@raw-catches)))
