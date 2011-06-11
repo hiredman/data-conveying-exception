@@ -47,22 +47,22 @@
 (defn- body-form? [x]
   (or (not (seq? x)) (not= 'catch (first x))))
 
-(defn- raw? [[_ x]]
+(defn- class-catch? [x]
   (and (symbol? x) (class? (resolve x))))
 
 (defmacro try+
   [& body]
   (let [[tried catches] (partition-by body-form? body)
-        [raw-catches dce-catches] (separate raw? catches)
         exception (gensym)]
     `(try
-       (try
-         ~@tried
-         (catch dce.Exception ~exception
-           (cond
-            ~@(mapcat
-               (fn [[_ pred local & body]]
-                 `[(~pred ~exception) (let [~local ~exception] ~@body)])
-               dce-catches)
-            :else (throw ~exception))))
-       ~@raw-catches)))
+       ~@tried
+       (catch Throwable ~exception
+         (cond
+          ~@(mapcat
+             (fn [[_ pred local & body]]
+               (let [pred (if (class-catch? pred)
+                            `(fn [x#] (instance? ~pred x#))
+                            pred)]
+                 `[(~pred ~exception) (let [~local ~exception] ~@body)]))
+             catches)
+          :else (throw ~exception))))))

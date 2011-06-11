@@ -48,6 +48,8 @@
                  (handle :funky {:keys [funkiness]}
                          funkiness)))))
 
+(defn funky? [x])
+
 (deftest test-try+
   (is (= :lots (try+
                 (throw+ :message "duuuude" :funky true :funkiness :lots)
@@ -58,11 +60,13 @@
                 (catch funky? x)
                 (catch Exception _))))
   (is (= :blowhard (try+
-                (throw+ (Exception. "whoops"))
-                (catch :funky {:keys [funkiness]}
-                  funkiness)
-                (catch :non-funky _
-                  :bummer-dude)
-                (catch funky? x)
-                (catch Exception _
-                  :blowhard)))))
+                    (throw+ (Exception. "whoops"))
+                    (catch :funky {:keys [funkiness]}
+                      funkiness)
+                    (catch #(re-find #"s3" (.getMessage %)) e
+                      :s3-sucks!)
+                    (catch :non-funky _
+                      :bummer-dude)
+                    (catch funky? x)
+                    (catch Exception _
+                      :blowhard)))))
