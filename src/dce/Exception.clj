@@ -70,11 +70,20 @@
 (defn -count [self]
   (count (.state self)))
 
-(defn throw+
+(defn- locals [env]
+  (into {} (for [[n _] env]
+             [(list 'quote n) n])))
+
+(defmacro throw+
   ([x]
-     (throw
-      (if (instance? Throwable x)
-        x
-        (dce.Exception. x))))
+     `(let [x# ~x]
+        (throw
+         (if (instance? Throwable x#)
+           x#
+           (dce.Exception.
+            (if (:locals x#)
+              x#
+              (assoc x# :locals ~(locals &env))))))))
   ([k v & kvs]
-     (throw+ (apply hash-map k v kvs))))
+     (let [m (apply hash-map k v kvs)]
+       `(throw+ ~m))))

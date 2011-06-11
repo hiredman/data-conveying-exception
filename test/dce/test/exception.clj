@@ -60,6 +60,8 @@
       :bummer-dude)
     (catch funky? x#
       :external-pred)
+    (catch :locals e#
+      e#)
     (catch Exception _#
       :exception)))
 
@@ -70,4 +72,9 @@
                      (throw+ (Exception. "whoops")))))
   (is (= :external-pred (mega-try
                          (throw+ :funkiness :most-excellent))))
-  (is (thrown? Throwable (mega-try (throw+ (Throwable. "hi'"))))))
+  (is (thrown? Throwable (mega-try (throw+ (Throwable. "hi"))))))
+
+(deftest test-locals
+  (is (= :not-variable ('a-local (:locals (mega-try
+                                           (let [a-local :not-variable]
+                                             (throw+ {}))))))))
