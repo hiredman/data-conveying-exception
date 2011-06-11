@@ -70,5 +70,11 @@
 (defn -count [self]
   (count (.state self)))
 
-(defn toss [& {:as args}]
-  (throw (dce.Exception. args)))
+(defn throw+
+  ([x]
+     (throw
+      (if (instance? Throwable x)
+        x
+        (dce.Exception. x))))
+  ([k v & kvs]
+     (throw+ (apply hash-map k v kvs))))

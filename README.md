@@ -4,22 +4,28 @@ An exception for carrying data. Based on clojure.contrib.condition.
 
 Differs from c.c.condition in a few ways:
 
-* the exception is a descendant of RuntimeException rather than direct Throwable
-* the exception may be treated as a Clojure map itself (rather than its metadata)
-* catch clauses may be interspersed with handle causes.
+* the exception is a descendant of RuntimeException rather than direct Throwable.
+* the exception may be treated as a Clojure map itself.
+
+Also introduces new awesomeness in the form of try+ and throw+. throw+
+takes an Exception, a map, or varargs, and constructs a data-conveying
+Exception in the latter two cases. try+ can destructure data-conveying
+exceptions in catches.
 
 ## Usage
 
     (defn asplode [problem type]
-      (dce.Exception/toss :message (str "Oh no! " problem") :type type))
+      (dce.Exception/throw+ :message (str "Oh no! " problem) :failure true))
       
-    (handler-case :type
+    (try+
       (when-not (success?)
-        (asplode "failed!" :failure))
-      (handle :failure e
+        (asplode "failed!"))
+      (catch :failure e
         (log/warn e "stuff failed, dude: " (:message e)))
-      (handle :catastrophic-failure e
-        (System/exit (:exit-code e))))
+      (catch :catastrophic-failure {:keys [exit-code]}
+        (System/exit exit-code))
+      (catch java.io.IOException e
+        (log/info "whatever; who cares.")))
 
 ## License
 

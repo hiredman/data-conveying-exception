@@ -1,7 +1,7 @@
 (ns dce.test.exception
   (:use [clojure.test]
         [dce.handle]
-        [dce.Exception :only [toss]]))
+        [dce.Exception :only [throw+]]))
 
 (def e (dce.Exception. {:a :bob :b :alice}))
 
@@ -43,19 +43,26 @@
 
 (deftest test-handler-case
   (is (= :lots (handler-case :type
-                 (toss :message "duuuude" :type :funky :funkiness :lots)
+                 (throw+ :message "duuuude" :type :funky :funkiness :lots)
                  (handle :non-funky _)
                  (handle :funky {:keys [funkiness]}
                          funkiness)))))
 
-(defn funky? [])
-
 (deftest test-try+
   (is (= :lots (try+
-                (toss :message "duuuude" :funky true :funkiness :lots)
+                (throw+ :message "duuuude" :funky true :funkiness :lots)
                 (catch :funky {:keys [funkiness]}
                   funkiness)
                 (catch :non-funky _
                   :bummer-dude)
                 (catch funky? x)
-                (catch Exception _)))))
+                (catch Exception _))))
+  (is (= :blowhard (try+
+                (throw+ (Exception. "whoops"))
+                (catch :funky {:keys [funkiness]}
+                  funkiness)
+                (catch :non-funky _
+                  :bummer-dude)
+                (catch funky? x)
+                (catch Exception _
+                  :blowhard)))))
