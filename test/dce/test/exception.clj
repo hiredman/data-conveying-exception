@@ -48,25 +48,26 @@
                  (handle :funky {:keys [funkiness]}
                          funkiness)))))
 
-(defn funky? [x])
+(defn funky? [{:keys [funkiness]}]
+  (= :most-excellent funkiness))
+
+(defmacro mega-try [body]
+  `(try+
+    ~body
+    (catch :funky {key# :key}
+      key#)
+    (catch :non-funky _#
+      :bummer-dude)
+    (catch funky? x#
+      :external-pred)
+    (catch Exception _#
+      :exception)))
 
 (deftest test-try+
-  (is (= :lots (try+
-                (throw+ :message "duuuude" :funky true :funkiness :lots)
-                (catch :funky {:keys [funkiness]}
-                  funkiness)
-                (catch :non-funky _
-                  :bummer-dude)
-                (catch funky? x)
-                (catch Exception _))))
-  (is (= :blowhard (try+
-                    (throw+ (Exception. "whoops"))
-                    (catch :funky {:keys [funkiness]}
-                      funkiness)
-                    (catch #(re-find #"s3" (.getMessage %)) e
-                      :s3-sucks!)
-                    (catch :non-funky _
-                      :bummer-dude)
-                    (catch funky? x)
-                    (catch Exception _
-                      :blowhard)))))
+  (is (= :destructured (mega-try
+                        (throw+ :message "duuuude" :key :destructured :funky true))))
+  (is (= :exception (mega-try
+                     (throw+ (Exception. "whoops")))))
+  (is (= :external-pred (mega-try
+                         (throw+ :funkiness :most-excellent))))
+  (is (thrown? Throwable (mega-try (throw+ (Throwable. "hi'"))))))
