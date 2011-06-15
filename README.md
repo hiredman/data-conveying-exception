@@ -1,6 +1,6 @@
-# Data-Carrying Exception
+# Data-Conveying Exception
 
-An exception for carrying data. Based on clojure.contrib.condition.
+An exception for conveying data. Based on clojure.contrib.condition.
 
 Differs from c.c.condition in a few ways:
 
